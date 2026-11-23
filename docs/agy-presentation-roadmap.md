@@ -18,21 +18,22 @@ We have baselined the transferred Lovable project on `main` (`git` + GitHub `CAH
 
 ## 2. Task Outline — Presentation System
 
-### Stage A — Decouple Content & State (Prep in current repo)
-- [ ] Define a typed **`PresentationPack` JSON schema** (app title, welcome line, `SITUATIONS`, `NUDGES`, `ALERTS`, `COMPLIMENTS`, banned-word list, `moodCorrect` swaps, and `THEMES` couplets), keeping the current Joy-Joy data as the built-in default pack.
-- [ ] Refactor [`src/components/joyjoy/JoyJoyTerminal.tsx`](../src/components/joyjoy/JoyJoyTerminal.tsx) into modular hooks/components (`useJoyJoySession`, chat panel, side tools, settings modal, re-education overlay) driven by the active pack.
-- [ ] Introduce **`StorageAdapter`** (abstracting `localStorage` → IndexedDB / Capacitor Preferences) and **`FileIOAdapter`** (web file input/download → Tauri/Capacitor native file pickers for loading/exporting JSON packs).
-- [ ] Isolate **`AIProviderAdapter`** as an optional, mothballed module so the UI has zero hard dependency on `createServerFn` or `LOVABLE_API_KEY`.
+### Stage A — Decouple Content & State ✅
+- [x] Define a typed **`PresentationPack` JSON schema** (`src/lib/joyjoy/pack.ts`), keeping the current Joy-Joy data as `DEFAULT_JOYJOY_PACK`.
+- [x] Refactor [`src/components/joyjoy/JoyJoyTerminal.tsx`](../src/components/joyjoy/JoyJoyTerminal.tsx) into `useJoyJoySession` + modular components (`ChatPanel`, `SideTools`, `Overlays`).
+- [x] Introduce **`StorageAdapter`**, **`FileIOAdapter`**, and **`AIProviderAdapter`** (mothballed offline default) under `src/lib/adapters/`.
+- [x] Make reply style selectable (**Couplets / ELIZA / Live AI**) and add a **Couplet Theme Filter** + keyword weight-score alerts (`classifyScored`) for testing couplet themes.
 
-### Stage B — Standalone Static Vite + PWA
-- [ ] Replace `@lovable.dev/vite-tanstack-config`, Nitro, `src/server.ts`, `src/start.ts`, and `reportLovableError` with a standard Vite + React + Tailwind v4 SPA build.
-- [ ] Replace remote Google Fonts `<link>` tags with locally bundled fonts (`@fontsource/*`) for true offline rendering.
-- [ ] Add `vite-plugin-pwa` (web manifest, icons, service worker precaching app shell, fonts, and default pack).
+### Stage B — Standalone Static Vite + PWA ✅
+- [x] Replace `@lovable.dev/vite-tanstack-config`, Nitro, `src/server.ts`, `src/start.ts`, and `reportLovableError` with a standard Vite + React + Tailwind v4 SPA build.
+- [x] Replace remote Google Fonts `<link>` tags with locally bundled `@fontsource/*` fonts for offline rendering.
+- [x] Add `vite-plugin-pwa` (manifest, SVG icon, Workbox service worker precaching `dist/`).
 - [ ] Verify offline installability and mobile/tablet-proportioned layout in browser dev tools.
 
-### Stage C — Native Shells (Capacitor & Tauri)
-- [ ] **Tauri (Desktop):** Configure `tauri.conf.json` (`frontendDist: "../dist"`) with a compact, mobile-proportioned "floating miniature tablet" default window, high-DPI scaling, and native JSON pack file open/save.
-- [ ] **Capacitor (Mobile):** Configure `capacitor.config.ts` (`webDir: "dist"`), wire `@capacitor/preferences` and native file/share handling for JSON packs.
+### Stage C — Native Shells (Scaffolded; native builds pending toolchain)
+- [x] **Tauri (Desktop):** Scaffolded `src-tauri/` (`tauri.conf.json` configured for `460×820` floating miniature tablet window, `frontendDist: "../dist"`).
+- [x] **Capacitor (Mobile):** Scaffolded `capacitor.config.ts` (`webDir: "dist"`) and `detectRuntime()` in `src/lib/adapters/runtime.ts`.
+- [ ] Compile/test native binaries in a Toolbox/Distrobox container with Rust (`cargo`) and Android SDK (`adb`), and wire native `StorageAdapter` / `FileIOAdapter` implementations.
 
 ---
 

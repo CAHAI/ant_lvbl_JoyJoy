@@ -1,4 +1,5 @@
 import type { Alert, Engine, Mode } from "@/hooks/useJoyJoySession";
+import type { Theme } from "@/lib/joyjoy/couplets";
 import { FloatingTitle } from "./Playtime";
 
 export function AlertBanner({ alerts, play }: { alerts: Alert[]; play: boolean }) {
@@ -39,14 +40,20 @@ export function ReEducationOverlay({ word, play, onFinish }: { word: string; pla
 export function SettingsModal({
   mode,
   engine,
+  themes = [],
+  forcedThemeId = "auto",
   onSwitchMode,
   onChooseEngine,
+  onChooseThemePin,
   onClose,
 }: {
   mode: Mode;
   engine: Engine;
+  themes?: Theme[];
+  forcedThemeId?: string;
   onSwitchMode: (m: Mode) => void;
   onChooseEngine: (e: Engine) => void;
+  onChooseThemePin: (id: string) => void;
   onClose: () => void;
 }) {
   return (
@@ -80,10 +87,11 @@ export function SettingsModal({
         </div>
         <div className="mt-6">
           <div className="text-xs">Counselor Engine</div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="mt-2 grid grid-cols-3 gap-2">
             {(
               [
-                ["local", "Local Couplets"],
+                ["local", "Couplets"],
+                ["eliza", "ELIZA"],
                 ["ai", "Live AI"],
               ] as const
             ).map(([k, l]) => (
@@ -91,7 +99,7 @@ export function SettingsModal({
                 key={k}
                 onClick={() => onChooseEngine(k)}
                 aria-pressed={engine === k}
-                className={`rounded-xl border-2 border-border px-3 py-2 font-display text-[10px] uppercase tracking-widest transition ${
+                className={`rounded-xl border-2 border-border px-2 py-2 font-display text-[10px] uppercase tracking-widest transition ${
                   engine === k ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                 }`}
               >
@@ -100,9 +108,37 @@ export function SettingsModal({
             ))}
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            {engine === "local" ? "Free, instant, state-approved rhymes." : "Fresh replies (falls back to ELIZA offline)."}
+            {engine === "local"
+              ? "State-approved rhyming couplets with keyword weight scoring."
+              : engine === "eliza"
+                ? "Direct non-rhyming reflection (offline)."
+                : "External AI provider (falls back to ELIZA offline)."}
           </p>
         </div>
+        {engine === "local" && (
+          <div className="mt-5">
+            <label htmlFor="couplet-theme-pin" className="block text-xs">
+              Couplet Theme Filter
+            </label>
+            <select
+              id="couplet-theme-pin"
+              value={forcedThemeId}
+              onChange={(e) => onChooseThemePin(e.target.value)}
+              className="mt-2 w-full rounded-xl border-2 border-border bg-background/80 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="auto">Auto (Keyword Weight Match)</option>
+              {themes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  Pin: {t.label} ({t.couplets.length})
+                </option>
+              ))}
+              <option value="general">Pin: General (Fallback)</option>
+            </select>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              {forcedThemeId === "auto" ? "Shows matched topic & weight score in alerts." : "Pinned to test couplets in this theme."}
+            </p>
+          </div>
+        )}
         <button className="btn-joy mt-6 w-full" onClick={onClose}>
           Accept
         </button>

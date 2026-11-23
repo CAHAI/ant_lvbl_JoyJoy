@@ -13,7 +13,7 @@ describe("joy-joy", () => {
   it("mood-corrects", () => expect(moodCorrect("I hate my job")).toBe("I adore my joy-job! 😊"));
   it("reflects I feel", () => expect(respond("I feel tired")).toContain("tired"));
 });
-import { THEMES, classify, coupletReply } from "./couplets";
+import { THEMES, classify, classifyScored, coupletReply } from "./couplets";
 describe("couplets", () => {
   it("has 200+ couplets", () => expect(THEMES.reduce((n, t) => n + t.couplets.length, 0)).toBeGreaterThanOrEqual(200));
   it("classifies themes", () => {
@@ -40,5 +40,12 @@ describe("couplet coverage", () => {
     expect(classify("my puppy chewed my shoe")?.id).toBe("pets");
     expect(classify("I can't afford the rent this month")?.id).toBe("money");
     expect(classify("my birthday party is on the weekend")?.id).toBe("holidays");
+  });
+  it("scores keyword hits and supports pinned themes", () => {
+    const scored = classifyScored("my boss scheduled a deadline meeting");
+    expect(scored.theme?.id).toBe("work");
+    expect(scored.score).toBe(3);
+    const pinned = coupletReply("blorp", THEMES, undefined, "pets");
+    expect(pinned.theme).toBe("Pets");
   });
 });

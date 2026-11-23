@@ -105,8 +105,11 @@ export function JoyJoyTerminal(props: UseJoyJoySessionOptions = {}) {
         <SettingsModal
           mode={s.mode}
           engine={s.engine}
+          themes={s.pack.themes}
+          forcedThemeId={s.forcedThemeId}
           onSwitchMode={s.switchMode}
           onChooseEngine={s.chooseEngine}
+          onChooseThemePin={s.chooseThemePin}
           onClose={() => {
             s.setSettings(false);
             s.alert("SETTINGS: UNCHANGED (AS INTENDED)");

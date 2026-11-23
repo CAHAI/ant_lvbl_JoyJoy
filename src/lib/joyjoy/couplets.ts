@@ -314,15 +314,31 @@ const stem = (w: string) => w.replace(/'s$/, "").replace(/(ies)$/, "y").replace(
  * stems longer than 3 letters). Highest score wins; ties keep the earlier theme.
  * Returns null when nothing matches, sending the message to the fallback pool.
  */
-export function classify(text: string, themes: Theme[] = THEMES): Theme | null {
+export type ClassifyResult = { theme: Theme | null; score: number; matched: string[] };
+
+/**
+ * Scores `text` against `themes` and returns the winning theme, its hit count,
+ * and the matched input tokens (useful for testing keyword weights).
+ */
+export function classifyScored(text: string, themes: Theme[] = THEMES): ClassifyResult {
   const words = (text.toLowerCase().match(/[a-z']+/g) ?? []).map(stem).filter((w) => w.length > 1);
-  let best: Theme | null = null, bestScore = 0;
+  let best: Theme | null = null;
+  let bestScore = 0;
+  let bestMatched: string[] = [];
   for (const t of themes) {
     const keys = t.keywords.map(stem);
-    const score = words.filter((w) => keys.some((k) => k === w || (k.length > 3 && (w.startsWith(k) || k.startsWith(w) && w.length > 3)))).length;
-    if (score > bestScore) { best = t; bestScore = score; }
+    const matched = words.filter((w) => keys.some((k) => k === w || (k.length > 3 && (w.startsWith(k) || (k.startsWith(w) && w.length > 3)))));
+    if (matched.length > bestScore) {
+      best = t;
+      bestScore = matched.length;
+      bestMatched = matched;
+    }
   }
-  return best;
+  return { theme: best, score: bestScore, matched: bestMatched };
+}
+
+export function classify(text: string, themes: Theme[] = THEMES): Theme | null {
+  return classifyScored(text, themes).theme;
 }
 
 // Shuffle bags: every couplet in a theme is used once before any repeats.
@@ -348,8 +364,18 @@ export function coupletReply(
   text: string,
   themes: Theme[] = THEMES,
   fallback: string[] = FALLBACK_COUPLETS,
-): { theme: string; reply: string } {
-  const t = classify(text, themes);
+  forcedThemeId?: string,
+): { theme: string; score: number; reply: string } {
+  if (forcedThemeId && forcedThemeId !== "auto") {
+    if (forcedThemeId === "general") {
+      return { theme: "General", score: 0, reply: draw("fallback", fallback).replace(" / ", "\n") };
+    }
+    const pinned = themes.find((t) => t.id === forcedThemeId);
+    if (pinned) {
+      return { theme: pinned.label, score: 0, reply: draw(pinned.id, pinned.couplets).replace(" / ", "\n") };
+    }
+  }
+  const { theme: t, score } = classifyScored(text, themes);
   const couplet = t ? draw(t.id, t.couplets) : draw("fallback", fallback);
-  return { theme: t?.label ?? "General", reply: couplet.replace(" / ", "\n") };
+  return { theme: t?.label ?? "General", score, reply: couplet.replace(" / ", "\n") };
 }

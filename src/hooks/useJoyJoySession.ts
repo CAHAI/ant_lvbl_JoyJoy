@@ -10,7 +10,7 @@ import { pick } from "@/lib/joyjoy/platitudes";
 
 /** Interface skin: the stark government terminal or the cartoon Playtime look. */
 export type Mode = "terminal" | "playtime";
-export type Engine = "local" | "ai";
+export type Engine = "local" | "eliza" | "ai";
 
 /** A single chat bubble; `from` is the citizen ("you") or the Counselor ("joy"). */
 export type Msg = { id: number; from: "you" | "joy"; text: string };
@@ -52,10 +52,14 @@ export function useJoyJoySession({
   const [mode, setMode] = useState<Mode>("terminal");
   const [wipe, setWipe] = useState(false);
   const [engine, setEngine] = useState<Engine>("local");
+  const [forcedThemeId, setForcedThemeId] = useState<string>("auto");
   const [lastActive, setLastActive] = useState(() => Date.now());
 
   useEffect(() => {
-    if (storage.get("joyjoy-engine") === "ai") setEngine("ai");
+    const savedEngine = storage.get("joyjoy-engine");
+    if (savedEngine === "ai" || savedEngine === "eliza" || savedEngine === "local") setEngine(savedEngine);
+    const savedPin = storage.get("joyjoy-theme-pin");
+    if (savedPin) setForcedThemeId(savedPin);
     if (storage.get("joyjoy-mode") === "playtime") setMode("playtime");
     const v = Number(storage.get("joyjoy-compliance"));
     if (v) setCompliance(v);
@@ -102,6 +106,11 @@ export function useJoyJoySession({
     storage.set("joyjoy-engine", e);
   };
 
+  const chooseThemePin = (id: string) => {
+    setForcedThemeId(id);
+    storage.set("joyjoy-theme-pin", id);
+  };
+
   const switchMode = (m: Mode) => {
     if (m === mode || wipe) return;
     setWipe(true);
@@ -136,9 +145,13 @@ export function useJoyJoySession({
     let reply: string;
     if (engine === "local") {
       await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
-      const c = coupletReply(text, pack.themes, pack.fallbackCouplets);
+      const c = coupletReply(text, pack.themes, pack.fallbackCouplets, forcedThemeId);
       reply = c.reply;
-      alert(`TOPIC: ${c.theme.toUpperCase()}`);
+      alert(`TOPIC: ${c.theme.toUpperCase()}${c.score > 0 ? ` · W:${c.score}` : ""}`);
+    } else if (engine === "eliza") {
+      await new Promise((r) => setTimeout(r, 350 + Math.random() * 350));
+      reply = respond(text);
+      alert("ENGINE: ELIZA DIRECT");
     } else {
       try {
         const r = await aiAdapter.reply(text, history);
@@ -215,8 +228,10 @@ export function useJoyJoySession({
     play: mode === "playtime",
     wipe,
     engine,
+    forcedThemeId,
     poke,
     chooseEngine,
+    chooseThemePin,
     switchMode,
     submit,
     autoGen,
