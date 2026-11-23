@@ -6,7 +6,13 @@ export const NEGATIVE_WORDS = [
 ];
 const RE = new RegExp(`\\b(${NEGATIVE_WORDS.join("|")})\\b`, "i");
 /** Returns the first banned word found in `text` (lowercased), or null if the message is compliant. */
-export function detectNegativity(text: string): string | null {
-  const m = text.match(RE);
+export function detectNegativity(text: string, words?: readonly string[]): string | null {
+  if (!words) {
+    const m = text.match(RE);
+    return m ? (m[1] ?? "").toLowerCase() : null;
+  }
+  if (!words.length) return null;
+  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const m = text.match(new RegExp(`\\b(${escaped.join("|")})\\b`, "i"));
   return m ? (m[1] ?? "").toLowerCase() : null;
 }

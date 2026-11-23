@@ -11,13 +11,15 @@ const SWAPS: Record<string, string> = {
   difficult: "delightful", job: "joy-job", work: "joy-work", monday: "Funday", rain: "complimentary sky-water",
   boss: "beloved supervisor", alone: "monitored", death: "permanent relaxation",
 };
+export { SWAPS as DEFAULT_MOOD_SWAPS };
+
 /**
- * Mood Correction tool: rewrites a sentence word-by-word through the SWAPS
+ * Mood Correction tool: rewrites a sentence word-by-word through the swaps
  * table (preserving capitalization), then enforces a cheerful exclamation.
  */
-export function moodCorrect(input: string): string {
+export function moodCorrect(input: string, swaps: Record<string, string> = SWAPS): string {
   const out = input.replace(/[A-Za-z']+/g, (w) => {
-    const r = SWAPS[w.toLowerCase()];
+    const r = swaps[w.toLowerCase()];
     if (!r) return w;
     return w[0] === w[0]?.toUpperCase() ? r.charAt(0).toUpperCase() + r.slice(1) : r;
   }).trim().replace(/[.?]*$/, "");

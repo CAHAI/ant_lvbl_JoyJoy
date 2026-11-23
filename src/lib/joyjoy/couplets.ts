@@ -314,10 +314,10 @@ const stem = (w: string) => w.replace(/'s$/, "").replace(/(ies)$/, "y").replace(
  * stems longer than 3 letters). Highest score wins; ties keep the earlier theme.
  * Returns null when nothing matches, sending the message to the fallback pool.
  */
-export function classify(text: string): Theme | null {
+export function classify(text: string, themes: Theme[] = THEMES): Theme | null {
   const words = (text.toLowerCase().match(/[a-z']+/g) ?? []).map(stem).filter((w) => w.length > 1);
   let best: Theme | null = null, bestScore = 0;
-  for (const t of THEMES) {
+  for (const t of themes) {
     const keys = t.keywords.map(stem);
     const score = words.filter((w) => keys.some((k) => k === w || (k.length > 3 && (w.startsWith(k) || k.startsWith(w) && w.length > 3)))).length;
     if (score > bestScore) { best = t; bestScore = score; }
@@ -344,8 +344,12 @@ function draw(id: string, list: string[]): string {
  * theme's shuffle bag (or the general fallback), and return it display-ready
  * with the " / " separator converted to a line break.
  */
-export function coupletReply(text: string): { theme: string; reply: string } {
-  const t = classify(text);
-  const couplet = t ? draw(t.id, t.couplets) : draw("fallback", FALLBACK_COUPLETS);
+export function coupletReply(
+  text: string,
+  themes: Theme[] = THEMES,
+  fallback: string[] = FALLBACK_COUPLETS,
+): { theme: string; reply: string } {
+  const t = classify(text, themes);
+  const couplet = t ? draw(t.id, t.couplets) : draw("fallback", fallback);
   return { theme: t?.label ?? "General", reply: couplet.replace(" / ", "\n") };
 }
